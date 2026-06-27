@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Clickrent — Madrid | 28/06/2026 00:24</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --border: #2a2d3a;
+    --text: #e4e6eb;
+    --text-dim: #8b8e98;
+    --accent: #3b82f6;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --header-bg: #161922;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.6rem; margin-bottom: 4px; }
+  .subtitle { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 20px; }
+  .review-badges { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+  .review-badge {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .card h2 { font-size: 1.1rem; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--border); }
+  th { background: var(--header-bg); font-weight: 600; font-size: 0.85rem; color: var(--text-dim); }
+  th:first-child, td:first-child { text-align: left; }
+  .cat-label { font-weight: 500; font-size: 0.85rem; }
+  .score-cell { min-width: 120px; }
+  .score-val { font-size: 1.4rem; font-weight: 700; }
+  .deltas { font-size: 0.7rem; margin-top: 2px; display: flex; gap: 4px; align-items: center; justify-content: center; }
+  .delta { font-weight: 600; }
+  .delta.up { color: var(--green); }
+  .delta.down { color: var(--red); }
+  .delta.flat { color: var(--text-dim); }
+  .delta-label { color: var(--text-dim); font-size: 0.65rem; }
+  .sparkline { display: block; margin: 4px auto 0; }
+  .chart-container { position: relative; height: 400px; }
+  .chart-controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .chart-controls button {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+  .chart-controls button:hover { border-color: var(--accent); }
+  .chart-controls button.active { background: var(--accent); border-color: var(--accent); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+  .footer { color: var(--text-dim); font-size: 0.75rem; text-align: center; margin-top: 20px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 700px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
+  .summary-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .summary-card .loc-name { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; }
+  .summary-card .big-score { font-size: 2rem; font-weight: 800; }
+  .summary-card .rating-text { font-size: 0.8rem; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<h1>📊 Dashboard Clickrent — Madrid</h1>
+<p class="subtitle">Última actualización: 28/06/2026 00:24 · Datos de Rentalcars.com · 2 días de histórico</p>
+
+<div class="review-badges"><div class="review-badge"><strong>Madrid Aeropuerto (MAD)</strong>:  · </div><div class="review-badge"><strong>Madrid - Estación de Chamartín</strong>:  · </div><div class="review-badge"><strong>Madrid - Estación de Atocha</strong>:  · </div><div class="review-badge"><strong>Getafe</strong>:  · </div></div>
+
+<div class="summary-grid" id="summaryGrid"></div>
+
+<div class="card">
+  <h2>📋 Tabla de puntuaciones (con deltas vs ayer / 7 días)</h2>
+  <table id="scoreTable">
+    <thead>
+      <tr>
+        <th>Categoría</th>
+        <th>🛫 Aeropuerto</th>
+        <th>🚉 Chamartín</th>
+        <th>🚉 Atocha</th>
+        <th>🏙️ Getafe</th>
+      </tr>
+    </thead>
+    <tbody>
+<tr><td class="cat-label">Puntuación general</td><td class="score-cell">
+                <div class="score-val">7.3</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.3,7.3"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">7.8</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.8,7.8"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">7.4</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.4,7.4"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">8.0</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="8.0,8.0"></svg>
+            </td></tr><tr><td class="cat-label">Relación calidad-precio</td><td class="score-cell">
+                <div class="score-val">7.4</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.4,7.4"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">7.4</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.4,7.4"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">7.3</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.3,7.3"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">7.0</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.0,7.0"></svg>
+            </td></tr><tr><td class="cat-label">Limpieza del vehículo</td><td class="score-cell">
+                <div class="score-val">7.5</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.5,7.5"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">8.5</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="8.5,8.5"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">7.9</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.9,7.9"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">7.9</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.9,7.9"></svg>
+            </td></tr><tr><td class="cat-label">Indicaciones al mostrador</td><td class="score-cell">
+                <div class="score-val">6.9</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="6.9,6.9"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">7.3</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.3,7.3"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">6.4</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="6.4,6.4"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">8.7</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="8.7,8.7"></svg>
+            </td></tr><tr><td class="cat-label">Calidad del servicio del personal</td><td class="score-cell">
+                <div class="score-val">7.4</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.4,7.4"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">7.9</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.9,7.9"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">7.7</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.7,7.7"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">8.1</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="8.1,8.1"></svg>
+            </td></tr><tr><td class="cat-label">Tiempo de devolución</td><td class="score-cell">
+                <div class="score-val">7.8</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.8,7.8"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">8.0</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="8.0,8.0"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">7.9</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.9,7.9"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">8.3</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="8.3,8.3"></svg>
+            </td></tr><tr><td class="cat-label">Confort del coche</td><td class="score-cell">
+                <div class="score-val">7.6</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.6,7.6"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">8.1</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="8.1,8.1"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">7.9</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.9,7.9"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">7.5</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.5,7.5"></svg>
+            </td></tr><tr><td class="cat-label">Tiempo de recogida</td><td class="score-cell">
+                <div class="score-val">6.4</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="6.4,6.4"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">7.3</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="7.3,7.3"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">6.5</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="6.5,6.5"></svg>
+            </td><td class="score-cell">
+                <div class="score-val">8.7</div>
+                <div class="deltas">
+                    <span class="delta-label">1d:</span> <span class="delta flat">→</span>
+                    <span class="delta-label">7d:</span> 
+                </div>
+                <svg class="sparkline" width="60" height="20" data-values="8.7,8.7"></svg>
+            </td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>📈 Evolución temporal por categoría</h2>
+  <div class="chart-controls" id="catControls"></div>
+  <div class="chart-container"><canvas id="trendChart"></canvas></div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>📍 Comparativa por ubicación</h2>
+    <div class="chart-container" style="height:350px"><canvas id="locChart"></canvas></div>
+  </div>
+  <div class="card">
+    <h2>🏆 Ranking actual</h2>
+    <div class="chart-container" style="height:350px"><canvas id="rankChart"></canvas></div>
+  </div>
+</div>
+
+<div class="footer">
+  Generado automáticamente · Skill: rentalcars-api-scraper · Datos: API Rentalcars.com
+</div>
+
+<script>
+let chartData = {"Madrid Aeropuerto (MAD)": {"score": {"label": "Puntuación general", "values": [7.3, 7.3]}, "relacion_calidad_precio": {"label": "Relación calidad-precio", "values": [7.4, 7.4]}, "limpieza_vehiculo": {"label": "Limpieza del vehículo", "values": [7.5, 7.5]}, "indicaciones_mostrador": {"label": "Indicaciones al mostrador", "values": [6.9, 6.9]}, "calidad_servicio_personal": {"label": "Calidad del servicio del personal", "values": [7.4, 7.4]}, "tiempo_devolucion": {"label": "Tiempo de devolución", "values": [7.8, 7.8]}, "confort_coche": {"label": "Confort del coche", "values": [7.6, 7.6]}, "tiempo_recogida": {"label": "Tiempo de recogida", "values": [6.4, 6.4]}}, "Madrid - Estación de Chamartín": {"score": {"label": "Puntuación general", "values": [7.8, 7.8]}, "relacion_calidad_precio": {"label": "Relación calidad-precio", "values": [7.4, 7.4]}, "limpieza_vehiculo": {"label": "Limpieza del vehículo", "values": [8.5, 8.5]}, "indicaciones_mostrador": {"label": "Indicaciones al mostrador", "values": [7.3, 7.3]}, "calidad_servicio_personal": {"label": "Calidad del servicio del personal", "values": [7.9, 7.9]}, "tiempo_devolucion": {"label": "Tiempo de devolución", "values": [8.0, 8.0]}, "confort_coche": {"label": "Confort del coche", "values": [8.1, 8.1]}, "tiempo_recogida": {"label": "Tiempo de recogida", "values": [7.3, 7.3]}}, "Madrid - Estación de Atocha": {"score": {"label": "Puntuación general", "values": [7.4, 7.4]}, "relacion_calidad_precio": {"label": "Relación calidad-precio", "values": [7.3, 7.3]}, "limpieza_vehiculo": {"label": "Limpieza del vehículo", "values": [7.9, 7.9]}, "indicaciones_mostrador": {"label": "Indicaciones al mostrador", "values": [6.4, 6.4]}, "calidad_servicio_personal": {"label": "Calidad del servicio del personal", "values": [7.7, 7.7]}, "tiempo_devolucion": {"label": "Tiempo de devolución", "values": [7.9, 7.9]}, "confort_coche": {"label": "Confort del coche", "values": [7.9, 7.9]}, "tiempo_recogida": {"label": "Tiempo de recogida", "values": [6.5, 6.5]}}, "Getafe": {"score": {"label": "Puntuación general", "values": [8.0, 8.0]}, "relacion_calidad_precio": {"label": "Relación calidad-precio", "values": [7.0, 7.0]}, "limpieza_vehiculo": {"label": "Limpieza del vehículo", "values": [7.9, 7.9]}, "indicaciones_mostrador": {"label": "Indicaciones al mostrador", "values": [8.7, 8.7]}, "calidad_servicio_personal": {"label": "Calidad del servicio del personal", "values": [8.1, 8.1]}, "tiempo_devolucion": {"label": "Tiempo de devolución", "values": [8.3, 8.3]}, "confort_coche": {"label": "Confort del coche", "values": [7.5, 7.5]}, "tiempo_recogida": {"label": "Tiempo de recogida", "values": [8.7, 8.7]}}};
+let dates = ["06-27", "06-28"];
+const locations = ["Madrid Aeropuerto (MAD)", "Madrid - Estación de Chamartín", "Madrid - Estación de Atocha", "Getafe"];
+const locShorts = ["aeropuerto", "chamartin", "atocha", "getafe"];
+const categories = [{"key": "score", "label": "Puntuación general"}, {"key": "relacion_calidad_precio", "label": "Relación calidad-precio"}, {"key": "limpieza_vehiculo", "label": "Limpieza del vehículo"}, {"key": "indicaciones_mostrador", "label": "Indicaciones al mostrador"}, {"key": "calidad_servicio_personal", "label": "Calidad del servicio del personal"}, {"key": "tiempo_devolucion", "label": "Tiempo de devolución"}, {"key": "confort_coche", "label": "Confort del coche"}, {"key": "tiempo_recogida", "label": "Tiempo de recogida"}];
+const locColors = ['#3b82f6', '#22c55e', '#f59e0b', '#a855f7'];
+
+// ── Sparklines ──
+document.querySelectorAll('.sparkline').forEach(svg => {
+  const values = svg.dataset.values.split(',').filter(v => v !== '').map(Number);
+  if (values.length < 2) { svg.style.display = 'none'; return; }
+  const w = 60, h = 20, pad = 2;
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = max - min || 1;
+  const step = (w - pad * 2) / (values.length - 1);
+  const pts = values.map((v, i) => `${pad + i * step},${h - pad - ((v - min) / range) * (h - pad * 2)}`);
+  const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  poly.setAttribute('points', pts.join(' '));
+  poly.setAttribute('fill', 'none');
+  poly.setAttribute('stroke', '#3b82f6');
+  poly.setAttribute('stroke-width', '1.5');
+  svg.appendChild(poly);
+});
+
+// ── Summary cards ──
+const summaryGrid = document.getElementById('summaryGrid');
+categories.forEach((cat, ci) => {
+  if (ci > 0) return; // solo score general
+  locations.forEach((loc, li) => {
+    const data = chartData[loc][cat.key].values;
+    const last = data[data.length - 1];
+    const card = document.createElement('div');
+    card.className = 'summary-card';
+    card.innerHTML = `
+      <div class="loc-name">${loc}</div>
+      <div class="big-score" style="color:${locColors[li]}">${last ? last.toFixed(1) : '—'}</div>
+    `;
+    summaryGrid.appendChild(card);
+  });
+});
+
+// ── Trend chart (evolución por categoría) ──
+let currentCat = 'score';
+const trendCtx = document.getElementById('trendChart').getContext('2d');
+let trendChart = null, locChart = null, rankChart = null;
+
+function renderTrend(catKey) {
+  if (trendChart) trendChart.destroy();
+  if (dates.length < 2) {
+    document.getElementById('trendChart').parentElement.innerHTML += '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#8b8e98;font-size:0.9rem;">Se necesitan al menos 2 días de histórico para mostrar la evolución temporal</div>';
+    return;
+  }
+  const datasets = locations.map((loc, i) => ({
+    label: loc,
+    data: chartData[loc][catKey].values,
+    borderColor: locColors[i],
+    backgroundColor: locColors[i] + '20',
+    tension: 0.3,
+    pointRadius: 3,
+    borderWidth: 2,
+    fill: false,
+  }));
+  trendChart = new Chart(trendCtx, {
+    type: 'line',
+    data: { labels: dates, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#e4e6eb' } } },
+      scales: {
+        x: { ticks: { color: '#8b8e98' }, grid: { color: '#2a2d3a' } },
+        y: { min: 5, max: 10, ticks: { color: '#8b8e98', stepSize: 1 }, grid: { color: '#2a2d3a' } },
+      }
+    }
+  });
+}
+
+// Category buttons
+const catControls = document.getElementById('catControls');
+categories.forEach(cat => {
+  const btn = document.createElement('button');
+  btn.textContent = cat.label;
+  if (cat.key === currentCat) btn.classList.add('active');
+  btn.onclick = () => {
+    catControls.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentCat = cat.key;
+    renderTrend(cat.key);
+  };
+  catControls.appendChild(btn);
+});
+renderTrend(currentCat);
+
+// ── Location comparison chart (bar) ──
+const locCtx = document.getElementById('locChart').getContext('2d');
+const locLabels = categories.map(c => c.label);
+const locDatasets = locations.map((loc, i) => ({
+  label: loc,
+  data: categories.map(cat => {
+    const vals = chartData[loc][cat.key].values;
+    return vals[vals.length - 1] || 0;
+  }),
+  backgroundColor: locColors[i],
+  borderRadius: 4,
+}));
+locChart = new Chart(locCtx, {
+  type: 'bar',
+  data: { labels: locLabels, datasets: locDatasets },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#e4e6eb' } } },
+    scales: {
+      x: { ticks: { color: '#8b8e98', font: { size: 9 } }, grid: { color: '#2a2d3a' } },
+      y: { min: 5, max: 10, ticks: { color: '#8b8e98' }, grid: { color: '#2a2d3a' } },
+    }
+  }
+});
+
+// ── Ranking chart (horizontal bar, score general) ──
+const rankCtx = document.getElementById('rankChart').getContext('2d');
+const rankData = locations.map((loc, i) => {
+  const vals = chartData[loc]['score'].values;
+  return vals[vals.length - 1] || 0;
+});
+rankChart = new Chart(rankCtx, {
+  type: 'bar',
+  data: {
+    labels: locations,
+    datasets: [{ label: 'Puntuación general', data: rankData, backgroundColor: locColors, borderRadius: 6 }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { min: 5, max: 10, ticks: { color: '#8b8e98' }, grid: { color: '#2a2d3a' } },
+      y: { ticks: { color: '#e4e6eb' }, grid: { display: false } },
+    }
+  }
+});
+</script>
+<script>
+// ── Dynamic CSV refresh from GitHub ──
+const CSV_URL = 'https://raw.githubusercontent.com/IvanAlgora/clickrent-reviews-data/main/clickrent_history.csv';
+
+function parseCSVText(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',');
+  const rows = lines.slice(1).filter(l => l.trim()).map(l => {
+    const vals = l.split(',');
+    const row = {};
+    headers.forEach((h, i) => row[h] = vals[i]);
+    return row;
+  });
+  const newDates = rows.map(r => r.date.slice(5));
+  const newChartData = {};
+  locations.forEach((loc, i) => {
+    const short = locShorts[i];
+    newChartData[loc] = {};
+    categories.forEach(cat => {
+      const col = short + '_' + cat.key;
+      newChartData[loc][cat.key] = {
+        label: cat.label,
+        values: rows.map(r => {
+          const v = r[col];
+          return v ? parseFloat(v) : null;
+        })
+      };
+    });
+  });
+  return { chartData: newChartData, dates: newDates };
+}
+
+async function refreshFromGitHub() {
+  try {
+    const resp = await fetch(CSV_URL, { cache: 'no-store' });
+    if (!resp.ok) { console.warn('CSV fetch failed:', resp.status); return; }
+    const text = await resp.text();
+    const parsed = parseCSVText(text);
+    if (parsed.dates.length <= dates.length) { console.log('No newer data in CSV'); return; }
+    chartData = parsed.chartData;
+    dates = parsed.dates;
+
+    // Re-render summary cards
+    var sg = document.getElementById('summaryGrid');
+    if (sg) {
+      sg.innerHTML = '';
+      categories.forEach((cat, ci) => {
+        if (ci > 0) return;
+        locations.forEach((loc, li) => {
+          var d = chartData[loc][cat.key].values;
+          var last = d[d.length - 1];
+          var card = document.createElement('div');
+          card.className = 'summary-card';
+          card.innerHTML = '<div class="loc-name">' + loc + '</div><div class="big-score" style="color:' + locColors[li] + '">' + (last ? last.toFixed(1) : '—') + '</div>';
+          sg.appendChild(card);
+        });
+      });
+    }
+
+    // Re-render trend chart
+    if (typeof renderTrend === 'function') renderTrend(currentCat);
+
+    // Re-render location chart
+    if (locChart) locChart.destroy();
+    var lc2 = document.getElementById('locChart').getContext('2d');
+    var ll2 = categories.map(c => c.label);
+    var ld2 = locations.map((loc, i) => ({
+      label: loc,
+      data: categories.map(cat => {
+        var v = chartData[loc][cat.key].values;
+        return v[v.length - 1] || 0;
+      }),
+      backgroundColor: locColors[i],
+      borderRadius: 4,
+    }));
+    locChart = new Chart(lc2, {
+      type: 'bar',
+      data: { labels: ll2, datasets: ld2 },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#e4e6eb' } } },
+        scales: {
+          x: { ticks: { color: '#8b8e98', font: { size: 9 } }, grid: { color: '#2a2d3a' } },
+          y: { min: 5, max: 10, ticks: { color: '#8b8e98' }, grid: { color: '#2a2d3a' } },
+        }
+      }
+    });
+
+    // Re-render ranking chart
+    if (rankChart) rankChart.destroy();
+    var rc2 = document.getElementById('rankChart').getContext('2d');
+    var rd2 = locations.map((loc, i) => {
+      var v = chartData[loc]['score'].values;
+      return v[v.length - 1] || 0;
+    });
+    rankChart = new Chart(rc2, {
+      type: 'bar',
+      data: { labels: locations, datasets: [{ label: 'Puntuación general', data: rd2, backgroundColor: locColors, borderRadius: 6 }] },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { min: 5, max: 10, ticks: { color: '#8b8e98' }, grid: { color: '#2a2d3a' } },
+          y: { ticks: { color: '#e4e6eb' }, grid: { display: false } },
+        }
+      }
+    });
+    console.log('Dashboard refreshed from GitHub CSV:', dates.length, 'days');
+  } catch(e) {
+    console.warn('Could not refresh from GitHub:', e);
+  }
+}
+refreshFromGitHub();
+</script>
+</body>
+</html>
